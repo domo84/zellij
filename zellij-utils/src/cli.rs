@@ -3,7 +3,7 @@ use crate::setup::Setup;
 use crate::{
     consts::{ZELLIJ_CONFIG_DIR_ENV, ZELLIJ_CONFIG_FILE_ENV},
     input::{
-        layout::PluginUserConfiguration,
+        layout::{PercentOrFixed, PluginUserConfiguration},
         options::{Options, PaneFrameStyle},
     },
 };
@@ -26,6 +26,19 @@ const CLI_STYLES: Styles = Styles::styled()
     .error(ansi(AnsiColor::Red))
     .valid(ansi(AnsiColor::Green))
     .invalid(ansi(AnsiColor::Yellow));
+
+fn parse_split_size(size: &str) -> Result<PercentOrFixed, String> {
+    use std::str::FromStr;
+    match PercentOrFixed::from_str(size) {
+        Ok(PercentOrFixed::Percent(0)) | Ok(PercentOrFixed::Fixed(0)) => {
+            Err("size must be more than 0".to_string())
+        },
+        Ok(size) => Ok(size),
+        Err(e) => Err(format!(
+            "expected a percent (eg. 30%) or a bare number (eg. 40): {e}"
+        )),
+    }
+}
 
 fn validate_session(name: &str) -> Result<String, String> {
     // Socket paths are named by a fixed-length session id, not the session name,
@@ -1520,6 +1533,10 @@ pub enum CliAction {
         pinned: Option<bool>,
         #[clap(long, conflicts_with("floating"), conflicts_with("direction"))]
         stacked: bool,
+        /// The new pane's share of the pane it splits, as a percent (eg. 30%) or a bare
+        /// number of columns or rows (eg. 40); needs --direction. Defaults to half
+        #[clap(long, requires("direction"), value_parser = parse_split_size)]
+        size: Option<PercentOrFixed>,
         /// Block until the command has finished and its pane has been closed
         #[clap(short, long)]
         blocking: bool,

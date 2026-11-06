@@ -4870,6 +4870,9 @@ pub enum NewPanePlacement {
         direction: Option<Direction>,
         borderless: Option<bool>,
         border_style: Option<BorderStyleOverride>,
+        /// The new pane's share of the split pane: a percent, or a fixed number of
+        /// columns (when splitting left/right) or rows (up/down). None splits it in half.
+        size: Option<crate::input::layout::PercentOrFixed>,
     },
     Floating(Option<FloatingPaneCoordinates>),
     InPlace {
@@ -4989,11 +4992,13 @@ impl NewPanePlacement {
             NewPanePlacement::Tiled {
                 direction,
                 borderless,
+                size,
                 ..
             } => NewPanePlacement::Tiled {
                 direction,
                 borderless,
                 border_style,
+                size,
             },
             NewPanePlacement::Floating(coords) => NewPanePlacement::Floating(Some(
                 coords.unwrap_or_default().with_border_style(border_style),

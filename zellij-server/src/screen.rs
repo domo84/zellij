@@ -11248,7 +11248,10 @@ pub(crate) fn screen_thread_main(
                                         direction: Some(direction),
                                         borderless,
                                         border_style: None,
+                                        size,
                                     } => {
+                                        // used (and cleared) by the split below
+                                        tab.set_next_split_size(size);
                                         if direction == Direction::Left
                                             || direction == Direction::Right
                                         {
@@ -13995,6 +13998,7 @@ pub(crate) fn screen_thread_main(
                         direction: None,
                         borderless: None,
                         border_style: None,
+                        size: None,
                     };
                 }
                 if should_be_in_place {

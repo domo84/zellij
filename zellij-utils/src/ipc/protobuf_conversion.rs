@@ -1910,6 +1910,7 @@ impl From<crate::input::actions::Action>
                 borderless,
                 border_style,
                 tab_id,
+                size,
                 ..
             } => ActionType::NewTiledPane(NewTiledPaneAction {
                 direction: direction.map(|d| direction_to_proto_i32(d)),
@@ -1920,6 +1921,7 @@ impl From<crate::input::actions::Action>
                 border_style: border_style.map(|b| b.into()),
                 tab_id: tab_id.map(|t| t as u32),
                 no_focus,
+                size: size.map(split_size_to_proto),
             }),
             crate::input::actions::Action::NewInPlacePane {
                 command,
@@ -3007,6 +3009,7 @@ impl TryFrom<crate::client_server_contract::client_server_contract::Action>
                     borderless: new_tiled_action.borderless,
                     border_style: new_tiled_action.border_style.map(|b| b.into()),
                     tab_id: new_tiled_action.tab_id.map(|t| t as usize),
+                    size: split_size_from_proto(new_tiled_action.size)?,
                 })
             },
             ActionType::NewInPlacePane(new_in_place_action) => {
@@ -4274,6 +4277,24 @@ fn resize_to_proto_i32(resize: crate::data::Resize) -> i32 {
     }
 }
 
+fn split_size_to_proto(size: crate::input::layout::PercentOrFixed) -> String {
+    match size {
+        crate::input::layout::PercentOrFixed::Percent(percent) => format!("{percent}%"),
+        crate::input::layout::PercentOrFixed::Fixed(fixed) => fixed.to_string(),
+    }
+}
+
+fn split_size_from_proto(
+    size: Option<String>,
+) -> Result<Option<crate::input::layout::PercentOrFixed>> {
+    use std::str::FromStr;
+    size.map(|s| {
+        crate::input::layout::PercentOrFixed::from_str(&s)
+            .map_err(|e| anyhow!("Invalid split size {s:?}: {e}"))
+    })
+    .transpose()
+}
+
 fn direction_to_proto_i32(direction: crate::data::Direction) -> i32 {
     use crate::client_server_contract::client_server_contract::Direction as ProtoDirection;
     match direction {
@@ -4683,15 +4704,18 @@ impl From<crate::data::NewPanePlacement>
                 direction,
                 borderless: None,
                 border_style: None,
+                size: None,
             } => PlacementType::Tiled(direction.map(direction_to_proto_i32).unwrap_or(0)),
             crate::data::NewPanePlacement::Tiled {
                 direction,
                 borderless,
                 border_style,
+                size,
             } => PlacementType::TiledWithOptions(TiledPlacement {
                 direction: direction.map(direction_to_proto_i32),
                 borderless,
                 border_style: border_style.map(|b| b.into()),
+                size: size.map(split_size_to_proto),
             }),
             crate::data::NewPanePlacement::Floating(coords) => {
                 PlacementType::Floating(coords.map(|c| c.into()).unwrap_or_default())
@@ -4760,6 +4784,7 @@ impl TryFrom<crate::client_server_contract::client_server_contract::NewPanePlace
                     direction,
                     borderless: opts.borderless,
                     border_style: opts.border_style.map(|b| b.into()),
+                    size: split_size_from_proto(opts.size)?,
                 })
             },
             PlacementType::StackedWithOptions(opts) => {
@@ -4788,6 +4813,7 @@ impl TryFrom<crate::client_server_contract::client_server_contract::NewPanePlace
                     direction,
                     borderless: None,
                     border_style: None,
+                    size: None,
                 })
             },
             PlacementType::Floating(coords) => {

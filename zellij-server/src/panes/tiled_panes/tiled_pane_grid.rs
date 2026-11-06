@@ -9,7 +9,7 @@ use std::collections::{HashMap, HashSet};
 use zellij_utils::data::{Direction, Resize, ResizeStrategy};
 use zellij_utils::{
     errors::prelude::*,
-    input::layout::SplitDirection,
+    input::layout::{PercentOrFixed, SplitDirection},
     pane_size::{Dimension, PaneGeom, Size, Viewport},
 };
 
@@ -2317,33 +2317,64 @@ impl<'a> TiledPaneGrid<'a> {
 }
 
 pub fn split(direction: SplitDirection, rect: &PaneGeom) -> Option<(PaneGeom, PaneGeom)> {
+    split_sized(direction, rect, None)
+}
+
+/// Split rect in two, the second (new) part taking `size` of it: a percent of rect, or a
+/// fixed number of columns/rows. None splits it in half.
+pub fn split_sized(
+    direction: SplitDirection,
+    rect: &PaneGeom,
+    size: Option<PercentOrFixed>,
+) -> Option<(PaneGeom, PaneGeom)> {
     let space = match direction {
         SplitDirection::Vertical => rect.cols,
         SplitDirection::Horizontal => rect.rows,
     };
     if let Some(p) = space.as_percent() {
-        let mut halved = Dimension::percent(p / 2.0);
-        halved.set_inner((space.as_usize() / 2).max(1));
+        let total = space.as_usize();
+        let (first, second) = match size {
+            None => {
+                let mut halved = Dimension::percent(p / 2.0);
+                halved.set_inner((total / 2).max(1));
+                (halved, halved)
+            },
+            Some(size) => {
+                let new_inner = match size {
+                    PercentOrFixed::Percent(percent) => {
+                        (total as f64 * percent as f64 / 100.0).round() as usize
+                    },
+                    PercentOrFixed::Fixed(fixed) => fixed,
+                }
+                .clamp(1, total.saturating_sub(1).max(1));
+                let share = new_inner as f64 / total.max(1) as f64;
+                let mut second = Dimension::percent(p * share);
+                second.set_inner(new_inner);
+                let mut first = Dimension::percent(p - p * share);
+                first.set_inner(total.saturating_sub(new_inner).max(1));
+                (first, second)
+            },
+        };
         let first_rect = match direction {
             SplitDirection::Vertical => PaneGeom {
-                cols: halved,
+                cols: first,
                 ..*rect
             },
             SplitDirection::Horizontal => PaneGeom {
-                rows: halved,
+                rows: first,
                 ..*rect
             },
         };
         let second_rect = match direction {
             SplitDirection::Vertical => PaneGeom {
                 x: first_rect.x + 1,
-                cols: first_rect.cols,
+                cols: second,
                 logical_position: None,
                 ..*rect
             },
             SplitDirection::Horizontal => PaneGeom {
                 y: first_rect.y + 1,
-                rows: first_rect.rows,
+                rows: second,
                 logical_position: None,
                 ..*rect
             },

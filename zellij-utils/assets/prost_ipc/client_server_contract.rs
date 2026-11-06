@@ -1071,6 +1071,8 @@ pub struct NewTiledPaneAction {
     pub no_focus: bool,
     #[prost(message, optional, tag="11")]
     pub border_style: ::core::option::Option<BorderStyleOverride>,
+    #[prost(string, optional, tag="12")]
+    pub size: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1726,6 +1728,8 @@ pub struct TiledPlacement {
     pub borderless: ::core::option::Option<bool>,
     #[prost(message, optional, tag="3")]
     pub border_style: ::core::option::Option<BorderStyleOverride>,
+    #[prost(string, optional, tag="4")]
+    pub size: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

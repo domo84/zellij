@@ -3311,8 +3311,11 @@ impl Tab {
             NewPanePlacement::Tiled {
                 direction: Some(direction),
                 borderless,
+                size,
                 ..
             } => {
+                // used (and cleared) by the split below
+                self.tiled_panes.set_next_split_size(size);
                 let is_vertical = direction == Direction::Left || direction == Direction::Right;
                 let focused_client_id = client_id.filter(|_| should_focus_pane);
                 match focused_client_id {
@@ -3375,6 +3378,7 @@ impl Tab {
                         }
                     },
                 }
+                self.tiled_panes.set_next_split_size(None);
                 Ok(())
             },
             NewPanePlacement::Floating(floating_pane_coordinates) => self.new_floating_pane(
@@ -4545,6 +4549,13 @@ impl Tab {
             completion_tx,
             borderless,
         )
+    }
+    /// Give the next split's new pane this size instead of half the split pane
+    pub fn set_next_split_size(
+        &mut self,
+        size: Option<zellij_utils::input::layout::PercentOrFixed>,
+    ) {
+        self.tiled_panes.set_next_split_size(size);
     }
     pub fn vertical_split_of_pane_id(
         &mut self,

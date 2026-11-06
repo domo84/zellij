@@ -14,7 +14,8 @@ mod pane_resizer_test_mock;
 mod pane_resizer_tests;
 
 use crate::resize_pty;
-use tiled_pane_grid::{split, TiledPaneGrid, RESIZE_PERCENT};
+use tiled_pane_grid::{split, split_sized, TiledPaneGrid, RESIZE_PERCENT};
+use zellij_utils::input::layout::PercentOrFixed;
 
 use crate::{
     os_input_output::ServerOsApi,
@@ -97,9 +98,15 @@ pub struct TiledPanes {
     tombstones_before_decrease: Option<(PaneId, Vec<HashMap<PaneId, PaneGeom>>)>,
     dimmed_clients: HashSet<ClientId>,
     panes_with_logged_render_errors: HashSet<PaneId>,
+    // The size the next split gives its new pane (new-pane --size), used once
+    next_split_size: Option<PercentOrFixed>,
 }
 
 impl TiledPanes {
+    /// Give the next split's new pane this size instead of half the split pane
+    pub fn set_next_split_size(&mut self, size: Option<PercentOrFixed>) {
+        self.next_split_size = size;
+    }
     #[allow(clippy::too_many_arguments)]
     pub fn set_live_views(&mut self, live_views: crate::pane_mirror::SharedLiveViews) {
         self.live_views = live_views;
@@ -149,6 +156,7 @@ impl TiledPanes {
             tombstones_before_decrease: None,
             dimmed_clients: HashSet::new(),
             panes_with_logged_render_errors: HashSet::new(),
+            next_split_size: None,
         }
     }
     pub fn set_client_dimmed(&mut self, client_id: ClientId, dimmed: bool) {
@@ -870,9 +878,11 @@ impl TiledPanes {
             log::error!("Pane to split {:?} not found", active_pane_id);
             return Some(new_pane);
         };
-        if let Some((top_winsize, bottom_winsize)) =
-            split(SplitDirection::Horizontal, &full_pane_size)
-        {
+        if let Some((top_winsize, bottom_winsize)) = split_sized(
+            SplitDirection::Horizontal,
+            &full_pane_size,
+            self.next_split_size.take(),
+        ) {
             if active_pane.position_and_size().is_stacked() {
                 match StackedPanes::new_from_btreemap(&mut self.panes, &self.panes_to_hide)
                     .resize_panes_in_stack(&active_pane_id, top_winsize)
@@ -936,9 +946,11 @@ impl TiledPanes {
             log::error!("Pane to split {:?} not found", active_pane_id);
             return Some(new_pane);
         };
-        if let Some((left_winsize, right_winsize)) =
-            split(SplitDirection::Vertical, &full_pane_size)
-        {
+        if let Some((left_winsize, right_winsize)) = split_sized(
+            SplitDirection::Vertical,
+            &full_pane_size,
+            self.next_split_size.take(),
+        ) {
             if active_pane.position_and_size().is_stacked() {
                 match StackedPanes::new_from_btreemap(&mut self.panes, &self.panes_to_hide)
                     .resize_panes_in_stack(&active_pane_id, left_winsize)

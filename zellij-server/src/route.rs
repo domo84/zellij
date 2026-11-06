@@ -911,6 +911,7 @@ fn route_action_with_origin(
                     direction: Some(direction),
                     borderless: None,
                     border_style: None,
+                    size: None,
                 },
                 None => NewPanePlacement::NoPreference {
                     borderless: None,
@@ -1027,6 +1028,7 @@ fn route_action_with_origin(
                             border_style: floating_pane_coordinates
                                 .as_ref()
                                 .and_then(|c| c.border_style),
+                            size: None,
                         }
                     },
                     start_suppressed,
@@ -1190,6 +1192,7 @@ fn route_action_with_origin(
             borderless,
             border_style,
             tab_id,
+            size,
         } => {
             let run_cmd = run_command
                 .map(|cmd| TerminalAction::RunCommand(cmd.into()))
@@ -1204,6 +1207,7 @@ fn route_action_with_origin(
                         direction,
                         borderless,
                         border_style,
+                        size,
                     },
                     false,
                     client_tab_index_or_paneid,
@@ -1263,6 +1267,7 @@ fn route_action_with_origin(
                         direction: command.direction,
                         borderless: None,
                         border_style: None,
+                        size: None,
                     },
                     false,
                     client_tab_index_or_paneid,

@@ -2,8 +2,8 @@
 
 pub use super::command::{OpenFilePayload, RunCommandAction};
 use super::layout::{
-    FloatingPaneLayout, Layout, PluginAlias, RunPlugin, RunPluginLocation, RunPluginOrAlias,
-    SwapFloatingLayout, SwapTiledLayout, TabLayoutInfo, TiledPaneLayout,
+    FloatingPaneLayout, Layout, PercentOrFixed, PluginAlias, RunPlugin, RunPluginLocation,
+    RunPluginOrAlias, SwapFloatingLayout, SwapTiledLayout, TabLayoutInfo, TiledPaneLayout,
 };
 use crate::cli::CliAction;
 use crate::data::{
@@ -335,6 +335,7 @@ pub enum Action {
         borderless: Option<bool>,
         border_style: Option<BorderStyleOverride>,
         tab_id: Option<usize>,
+        size: Option<PercentOrFixed>,
     },
     /// Open a new pane in place of the focused one, suppressing it instead
     /// Returns: Created pane ID (format: terminal_<id> or plugin_<id>)
@@ -1347,6 +1348,7 @@ impl Action {
                 height,
                 pinned,
                 stacked,
+                size,
                 blocking,
                 block_until_exit_success,
                 block_until_exit_failure,
@@ -1438,6 +1440,7 @@ impl Action {
                             direction,
                             borderless,
                             border_style,
+                            size,
                         }
                     };
 
@@ -1570,6 +1573,7 @@ impl Action {
                             borderless,
                             border_style,
                             tab_id,
+                            size,
                         }])
                     }
                 } else {
@@ -1615,6 +1619,7 @@ impl Action {
                             borderless,
                             border_style,
                             tab_id,
+                            size,
                         }])
                     }
                 }

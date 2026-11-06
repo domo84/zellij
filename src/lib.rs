@@ -153,6 +153,7 @@ fn main() {
                 borderless,
                 border_style,
                 tab_id,
+                size: None,
             };
             commands::send_action_to_session(command_cli_action, opts.session, config);
             std::process::exit(0);
@@ -210,6 +211,7 @@ fn main() {
                 borderless,
                 border_style,
                 tab_id,
+                size: None,
             };
             commands::send_action_to_session(command_cli_action, opts.session, config);
             std::process::exit(0);
